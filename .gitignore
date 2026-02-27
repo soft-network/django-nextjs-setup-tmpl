@@ -1,0 +1,12 @@
+backend/
+frontend/
+.env
+.env.local
+node_modules/
+__pycache__/
+.venv/
+*.pyc
+.next/
+.DS_Store
+justfile
+.pre-commit-config.yaml

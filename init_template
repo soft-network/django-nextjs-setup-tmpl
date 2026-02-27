@@ -1,0 +1,116 @@
+#!/usr/bin/env bash
+# ============================================================
+# init-template.sh
+# Einmal ausführen um das Template-Repo auf GitHub zu erstellen.
+# Danach kannst du diese Datei löschen.
+#
+# Voraussetzungen:
+#   - git installiert
+#   - gh CLI installiert (https://cli.github.com)
+#   - gh auth login bereits gemacht
+# ============================================================
+set -euo pipefail
+
+REPO_NAME="saas-project-template"
+VISIBILITY="public"  # oder "private"
+
+echo ""
+echo "🚀 Erstelle GitHub Template: $REPO_NAME"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+
+# --- Prüfe Voraussetzungen ---
+if ! command -v gh &>/dev/null; then
+    echo "❌ GitHub CLI (gh) nicht gefunden."
+    echo "   Installiere es: https://cli.github.com"
+    exit 1
+fi
+
+if ! gh auth status &>/dev/null; then
+    echo "❌ Nicht bei GitHub eingeloggt."
+    echo "   Führe aus: gh auth login"
+    exit 1
+fi
+
+GITHUB_USER=$(gh api user --jq '.login')
+echo "✅ Eingeloggt als: $GITHUB_USER"
+
+# --- Ordner vorbereiten ---
+mkdir -p "$REPO_NAME"
+cd "$REPO_NAME"
+
+# --- Dateien prüfen ---
+for file in project.conf setup.sh README.md; do
+    if [ ! -f "$file" ]; then
+        echo "❌ $file fehlt! Kopiere die Datei in diesen Ordner."
+        exit 1
+    fi
+done
+
+chmod +x setup.sh
+
+# --- .gitignore ---
+cat > .gitignore << 'EOF'
+# Generiert von setup.sh — nicht ins Template
+backend/
+frontend/
+.env
+.env.local
+.env.*.local
+node_modules/
+__pycache__/
+.venv/
+*.pyc
+.next/
+.turbo/
+dist/
+build/
+.DS_Store
+Thumbs.db
+*.log
+justfile
+.pre-commit-config.yaml
+EOF
+
+# --- Git Init + Commit ---
+git init
+git add project.conf setup.sh README.md .gitignore
+git commit -m "feat: SaaS project setup toolbox
+
+- Auto-detect OS (Debian/Fedora/Arch/macOS)
+- Install Python, Node.js, uv, pnpm (only what's missing)
+- Setup Django backend + Next.js frontend
+- Generate .env, .gitignore, justfile, pre-commit config
+- Supports --dry-run, --check, --clean modes"
+
+# --- Auf GitHub pushen ---
+echo ""
+echo "📤 Erstelle Repo auf GitHub..."
+gh repo create "$REPO_NAME" \
+    --"$VISIBILITY" \
+    --source=. \
+    --push \
+    --description "🛠️ Reusable SaaS project template — Django + Next.js auto-setup"
+
+# --- Als Template markieren ---
+echo ""
+echo "⚙️  Markiere als Template Repository..."
+gh api \
+    --method PATCH \
+    -H "Accept: application/vnd.github+json" \
+    "/repos/$GITHUB_USER/$REPO_NAME" \
+    -f is_template=true
+
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "✅ Fertig!"
+echo ""
+echo "📎 Dein Template: https://github.com/$GITHUB_USER/$REPO_NAME"
+echo ""
+echo "🚀 Neues Projekt erstellen:"
+echo "   gh repo create mein-neues-projekt --template $GITHUB_USER/$REPO_NAME --public --clone"
+echo "   cd mein-neues-projekt"
+echo "   nano project.conf"
+echo "   ./setup.sh"
+echo ""
+echo "🗑️  Diese Datei (init-template.sh) kannst du jetzt löschen."
