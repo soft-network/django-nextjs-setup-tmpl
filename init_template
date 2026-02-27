@@ -114,3 +114,6 @@ echo "   nano project.conf"
 echo "   ./setup.sh"
 echo ""
 echo "🗑️  Diese Datei (init-template.sh) kannst du jetzt löschen."
+
+
+# -m "feat: add, Django + Next.js, Docker, Neon CLI, Redis, GitHub Actions CI/CD"
